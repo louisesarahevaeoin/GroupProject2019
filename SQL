@@ -1,0 +1,20 @@
+
+
+CREATE TABLE Weatherdata
+    (
+        DateInfo INT NOT NULL,
+       PLACE VARCHAR(255) NOT NULL,
+        MinTemp DECIMAL NOT NULL,
+		MaxTemp DECIMAL NOT NULL,
+		Rainfall DECIMAL NOT NULL,
+		Temp9am DECIMAL NOT NULL,
+		Temp3pm DECIMAL NOT NULL,
+		RISK_MM DECIMAL NOT NULL,
+		RainTomorrow VARCHAR(255) NOT NULL
+    )
+    ;
+
+INSERT INTO Weatherdata VALUES
+(1999-12-01, 'Spain', 2.2, 27.7, .1, 4, 5.6, 8.4, 'Yes');
+
+SELECT * FROM Weatherdata;
