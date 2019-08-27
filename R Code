@@ -1,0 +1,312 @@
+R CODE:::
+  
+  rm(list=ls())
+
+#Set working directory to folder with dataset
+
+install.packages("ggplot2")
+install.packages("caret")
+install.packages("e1071")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("plyr")
+install.packages("rworldmap")
+install.packages("lubridate")
+install.packages("sqldf")
+install.packages("rpart")
+install.packages("forecast")
+install.packages("fpp2")
+install.packages("xts")
+install.packages("TTR")
+
+#Import the libraries
+
+library(ggplot2)
+library(caret)
+library(e1071)
+library(dplyr)
+library(tidyr)
+library(plyr)
+library(rworldmap)
+library(lubridate)
+library(sqldf)
+library(rpart)
+library(GGally)
+library(forecast)
+library(fpp2)
+library(xts)
+library(TTR)
+
+groupdata <- read.csv("finalgroupdataset.csv")
+
+#Familiarising myself with the dataset
+View(groupdata)
+
+#Looking at the first 10 rows of the dataset
+head(groupdata, 10)
+
+#Reviewing the last 10 rows of the dataset
+tail(groupdata, 10)
+
+#Studying the structure of the dataset
+str(groupdata)
+
+#Reviewing the summary of the dataset.
+
+summary(groupdata)
+#This tells us that there are missing values in the dataset
+sum(is.na(groupdata))
+
+
+names(groupdata)[1] <- "Date"
+names(groupdata)[2] <- "Location"
+names(groupdata)[3] <- "MinTemp"
+names(groupdata)[4] <- "MaxTemp"
+names(groupdata)[5] <- "Rainfall"
+names(groupdata)[6] <- "Temp9am"
+names(groupdata)[7] <- "Temp3pm"
+names(groupdata)[8] <- "RISK_MM"
+names(groupdata)[9] <- "RainTomorrow"
+
+newdataset <- sqldf("select Date, Location, MinTemp, MaxTemp, Rainfall, Temp9am, Temp3pm, RISK_MM, RainTomorrow from groupdata")
+View(newdataset)
+
+str(newdataset)
+
+sum(is.na(newdataset))
+
+summary(newdataset)
+
+#Calculate the mean for the 'MinTemp' column
+
+meanmintemp <- mean(newdataset$MinTemp, na.rm = TRUE)
+
+#Impute missing values in MinTemp column
+
+newdataset$MinTemp <- ifelse(is.na(newdataset$MinTemp), as.numeric(meanmintemp), newdataset$MinTemp)
+
+#Calculate the mean for the 'MaxTemp' column
+
+meanmaxtemp <- mean(newdataset$MaxTemp, na.rm = TRUE)
+
+#Impute missing values in MaxTemp column
+
+newdataset$MaxTemp <- ifelse(is.na(newdataset$MaxTemp), as.numeric(meanmaxtemp), newdataset$MaxTemp)
+
+#Calculate the mean for the 'Rainfall' column
+
+meanrainfall <- mean(newdataset$Rainfall, na.rm = TRUE)
+
+#Impute missing values in Rainfall column
+
+newdataset$Rainfall <- ifelse(is.na(newdataset$Rainfall), as.numeric(meanrainfall), newdataset$Rainfall)
+
+#Calculate the mean for the 'Temp9am' column
+
+meantemp9am <- mean(newdataset$Temp9am, na.rm = TRUE)
+
+#Impute missing values in Temp9am column
+
+newdataset$Temp9am <- ifelse(is.na(newdataset$Temp9am), as.numeric(meantemp9am), newdataset$Temp9am)
+
+#Calculate the mean for the 'Temp39m' column
+
+meantemp3pm <- mean(newdataset$Temp3pm, na.rm = TRUE)
+
+#Impute missing values in Temp3pm column
+
+newdataset$Temp3pm <- ifelse(is.na(newdataset$Temp3pm), as.numeric(meantemp3pm), newdataset$Temp3pm)
+
+sum(is.na(newdataset))
+
+summary(newdataset)
+
+View(newdataset)
+
+#Export newdataset
+
+write.csv(newdataset, 'C:\\Users\\louis\\OneDrive\\Documents\\Group Projects\\groupdata.csv')
+
+#Step 4 - Ensure date is formatted the same in each row
+
+newdataset$Date <- dmy(newdataset$Date)
+
+
+View(newdataset)
+str(newdataset)
+
+#Predictive modelling
+
+area <- 'Albury'
+#Subset the data
+data.sub1 <-subset(newdataset, Location == area)
+View(data.sub1)
+
+str(data.sub1)
+
+#Create a time series graph for Albury
+
+ggplot(data.sub1, aes(Date, MaxTemp)) + geom_line() +
+  scale_x_date() + xlab("") + ylab("Max Temperature") +
+  ggtitle("Time Series For Albury") +
+  theme(panel.background = element_rect(fill = "white"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black", size = 1))
+
+#Albury for one year
+
+area12 <- 'Albury'
+#Subset the data by longitude and latitude
+data.sub12 <-subset(newdataset, Location == area12 & Date >= '2009-01-01' & Date <= '2009-12-31')
+View(data.sub12)
+
+str(data.sub12)
+
+#Create a line graph for Albury for one year to see trends
+
+ggplot(data.sub12, aes(Date, MaxTemp)) + geom_line() +
+  scale_x_date() + xlab("") + ylab("Max Temperature") +
+  ggtitle("Time Series For Albury 2009") +
+  theme(panel.background = element_rect(fill = "white"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black", size = 1))
+
+#Convert the dataframe into an xts object
+
+newdataset.xts <- xts(x = data.sub1$MaxTemp, order.by = data.sub1$Date)
+str(newdataset.xts)
+
+#Gather the average max temperature and date in a variable
+
+newdataset_date <- apply.monthly(newdataset.xts, mean)
+
+View(newdataset_date)
+
+#The data is then split into training and testing sets. When separating time series sets the training set is the oldest 80%
+#of the data and the test set is the more recent 20%. The reason we do not randomize the data are because we want to know
+#how well our model is going to predict future observations.
+
+#Select the first 80% of the data
+
+newdataset_end <- floor(0.8*length(newdataset_date))
+
+#Assign the first 80% of the data to the train set
+
+newdataset_train <- newdataset_date[1:newdataset_end,]
+
+#Assign the most recent 20% to the test set
+
+newdataset_test <- newdataset_date[(newdataset_end+1):length(newdataset_date),]
+
+#Training data
+
+newdataset_start <- c(year(start(newdataset_train)), month(start(newdataset_train)))
+newdataset_end <- c(year(end(newdataset_train)), month(end(newdataset_train)))
+newdataset_train <- ts(as.numeric(newdataset_train), start = newdataset_start,
+                       end = newdataset_end, frequency = 12)
+
+#Same again for test data
+
+newdataset_start <- c(year(start(newdataset_test)), month(start(newdataset_test)))
+newdataset_end <- c(year(end(newdataset_test)), month(end(newdataset_test)))
+newdataset_test <- ts(as.numeric(newdataset_test), start = newdataset_start,
+                      end = newdataset_end, frequency = 12)
+
+#How far out we will need our training model to predict in order to compare with our observed values for evaluating the model accuracy.
+
+forecast_horizon <- length(newdataset_test)
+
+#Checking the classes are time series for the training and test set
+
+class(newdataset_train)
+class(newdataset_test)
+
+#Decompose the Time Series
+
+newdataset_train_components <- decompose(newdataset_train)
+plot(newdataset_train_components) + title("for temperature in Albury")
+
+#Arima forecasting
+
+auto.arima(newdataset_train, seasonal = TRUE)
+fit <- auto.arima(newdataset_train, seasonal = TRUE)
+tsdisplay(residuals(fit), lag.max = 45, main = '(2,0,2) Model Residuals')
+
+fcast <- forecast(fit, h=30) #Specify forecast horizon h periods
+plot(fcast)
+lines(newdataset_test, col = "red")
+legend("topleft", legend=c("Actual", "ARIMA Forecast"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+#Checking the accuracy of the arima model
+
+accuracy(fcast, newdataset_test)
+
+#Exponential Smoothing Forecast account for the trend and seasonal components
+newdataset_train_esf <- HoltWinters(newdataset_train,
+                                    beta=TRUE,
+                                    gamma=TRUE) %>%
+  forecast(h=forecast_horizon)
+
+head(newdataset_train_esf$fitted)
+tail(newdataset_train_esf$fitted)
+
+#Holt Winters Prediction
+
+newdataset_train%>%
+  HoltWinters(beta = FALSE, gamma = TRUE) %>%
+  forecast(h=forecast_horizon) %>%
+  plot()
+lines(newdataset_test, col = "red")
+legend("topleft", legend=c("Actual", "Holt Winters Forecast"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+#Evaluating the accuracy of the forecasting models
+
+accuracy(newdataset_train_esf, newdataset_test)
+
+#ETS(M, Ad, M) Prediction
+
+predictets <- newdataset_train %>%
+  ma(order = 3, centre = TRUE) %>%
+  forecast(h = forecast_horizon) %>%
+  plot()
+lines(newdataset_test, col = "red")
+legend("topleft", legend=c("Actual", "ETS(M, Ad, M) Forecast"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+#Evaluating the accuracy of the forecasting models
+
+accuracy(predictets$mean, newdataset_test)
+
+#Forecasts from ETS(M,N,A)
+
+fit2 <- ets(newdataset_train)
+fit2 #Discover the best model to use
+
+prediction <- newdataset_train %>%
+  forecast(h=forecast_horizon) %>%
+  plot()
+lines(newdataset_test, col = "red")
+legend("topleft", legend=c("Actual", "ETS Forecast(M,N,A"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+#Evaluating the accuracy of the forecasting models
+
+accuracy(prediction$mean, newdataset_test)
+
+#STL Forecast
+
+fit3 <- stl(newdataset_train, t.window=15,
+            s.window="periodic", robust=TRUE)
+focaststl <- forecast(fit3, method="naive", h=24)
+plot(focaststl)
+lines(newdataset_test, col = "red")
+legend("topleft", legend=c("Actual", "STL Forecast"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+#Evaluating the accuracy of the forecasting models
+
+accuracy(focaststl, newdataset_test)
