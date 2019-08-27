@@ -1,14 +1,16 @@
 
+Drop Table Weatherdata;
+
 CREATE TABLE Weatherdata
     (
-        DateInfo INT NOT NULL,
+        DateInfo VARCHAR NOT NULL,
        PLACE VARCHAR(255) NOT NULL,
-        MinTemp DECIMAL NOT NULL,
-		MaxTemp DECIMAL NOT NULL,
-		Rainfall DECIMAL NOT NULL,
-		Temp9am DECIMAL NOT NULL,
-		Temp3pm DECIMAL NOT NULL,
-		RISK_MM DECIMAL NOT NULL,
+        MinTemp VARCHAR(255) NOT NULL,
+		MaxTemp VARCHAR(255) NOT NULL,
+		Rainfall VARCHAR(255) NOT NULL,
+		Temp9am VARCHAR(255) NOT NULL,
+		Temp3pm VARCHAR(255) NOT NULL,
+		RISK_MM VARCHAR(255) NOT NULL,
 		RainTomorrow VARCHAR(255) NOT NULL
     )
     ;
@@ -19,36 +21,15 @@ INSERT INTO Weatherdata VALUES
 SELECT TOP 10 * 
 FROM Weatherdata;
 
-ALTER TABLE Weatherdata
-ALTER COLUMN DateInfo VARCHAR (255);
+DELETE
+FROM
+   Weatherdata
+WHERE
+    DateInfo = '1986';
 
-ALTER TABLE Weatherdata
-ALTER COLUMN RainTomorrow VARCHAR(255);
+	DELETE
+FROM
+   Weatherdata
+WHERE
+    DateInfo = '"Date"';
 
-ALTER TABLE Weatherdata
-Alter COLUMN DateInfo VARCHAR (255);
-
-      ALTER TABLE Weatherdata
-Alter COLUMN PLACE VARCHAR(255);
-
-        ALTER TABLE Weatherdata
-Alter COLUMN MinTemp VARCHAR (255);
-
-		ALTER TABLE Weatherdata
-Alter COLUMN MaxTemp VARCHAR (255);
-
-
-		ALTER TABLE Weatherdata
-Alter COLUMN Rainfall VARCHAR (255);
-
-		ALTER TABLE Weatherdata
-Alter COLUMN Temp9am VARCHAR (255);
-
-		ALTER TABLE Weatherdata
-Alter COLUMN Temp3pm VARCHAR (255);
-
-		ALTER TABLE Weatherdata
-Alter COLUMN RISK_MM VARCHAR (255);
-
-		ALTER TABLE Weatherdata
-Alter COLUMN RainTomorrow VARCHAR(255);
