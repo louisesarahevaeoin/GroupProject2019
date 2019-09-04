@@ -1,0 +1,73 @@
+# Map 1-based optional input ports to variables 
+
+groupdata<- maml.mapInputPort(1) # class: data.frame 
+# Contents of optional Zip port are in ./src/
+# source("src/yourfile.R");
+# load("src/yourData.rdata");
+
+install.packages("sqldf")
+library(sqldf)
+install.packages("xts")
+library(xts)
+
+
+
+newdataset <- groupdata
+ 
+
+# create a data frame containing occupation and the number of hours per week worked 
+#Calculate the mean for the 'MinTemp' column
+
+meanmintemp <- mean(newdataset$MinTemp, na.rm = TRUE)
+
+#Impute missing values in MinTemp column
+
+newdataset$MinTemp <- ifelse(is.na(newdataset$MinTemp), as.numeric(meanmintemp), newdataset$MinTemp)
+
+#Calculate the mean for the 'MaxTemp' column
+
+meanmaxtemp <- mean(newdataset$MaxTemp, na.rm = TRUE)
+
+#Impute missing values in MaxTemp column
+
+newdataset$MaxTemp <- ifelse(is.na(newdataset$MaxTemp), as.numeric(meanmaxtemp), newdataset$MaxTemp)
+
+#Calculate the mean for the 'Rainfall' column
+
+meanrainfall <- mean(newdataset$Rainfall, na.rm = TRUE)
+
+#Impute missing values in Rainfall column
+
+newdataset$Rainfall <- ifelse(is.na(newdataset$Rainfall), as.numeric(meanrainfall), newdataset$Rainfall)
+
+#Calculate the mean for the 'Temp9am' column
+
+meantemp9am <- mean(newdataset$Temp9am, na.rm = TRUE)
+
+#Impute missing values in Temp9am column
+
+newdataset$Temp9am <- ifelse(is.na(newdataset$Temp9am), as.numeric(meantemp9am), newdataset$Temp9am)
+
+#Calculate the mean for the 'Temp39m' column
+
+meantemp3pm <- mean(newdataset$Temp3pm, na.rm = TRUE)
+
+#Impute missing values in Temp3pm column
+
+newdataset$Temp3pm <- ifelse(is.na(newdataset$Temp3pm), as.numeric(meantemp3pm), newdataset$Temp3pm)
+
+# You'll see this output in the R Device port. 
+
+# It'll have your stdout, stderr and PNG graphics device(s). 
+
+print(newdataset); 
+
+ 
+
+# convert result value to a data frame 
+
+data.set = rbind.data.frame(newdataset); 
+
+# Select data.frame to be sent to the output Dataset port 
+
+maml.mapOutputPort("data.set"); 
