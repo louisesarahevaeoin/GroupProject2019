@@ -36,7 +36,6 @@ library(forecast)
 library(fpp2)
 library(xts)
 library(TTR)
-
 groupdata <- read.csv("finalgroupdataset.csv")
 
 #Familiarising myself with the dataset
